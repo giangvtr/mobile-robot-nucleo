@@ -16,3 +16,5 @@
 .\objects\main.o: gpio.h
 .\objects\main.o: systick.h
 .\objects\main.o: stm32_periph.h
+.\objects\main.o: ultrason.h
+.\objects\main.o: stm32_periph.h
