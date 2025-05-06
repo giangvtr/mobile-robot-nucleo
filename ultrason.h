@@ -11,3 +11,5 @@
 
 void initGPIORadar();
 void initTimerRadar();
+void TIM2_IRQn(void);
+void UltraSoundMgt();
