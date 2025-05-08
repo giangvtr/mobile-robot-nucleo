@@ -6,12 +6,18 @@
 
 uint8_t robot_speed_right = 0;
 uint8_t robot_speed_left = 0;
-uint8_t robot_direction = 0;
-uint8_t robot_direction = 0;
+
+typedef enum {
+	FORWARD,
+	BACKWARD,
+	TURN_LEFT,
+	TURN_RIGHT
+} robot_direction;
 uint8_t robot_speed = 0;
+uint8_t pwm_init = 0;				//A boolean to know whether the moter is initialised
 
 /// @brief Initializes GPIO pins (PB8 and PB12 for Direction)
-void initGPIOMoteur(){
+void initGPIOMoteur(void){
 
     // Enable clock for GPIOB without touching other GPIOs
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
@@ -34,7 +40,7 @@ void initGPIOMoteur(){
 }
 
 /// @brief Initializes TIM2 to generate PWM signals for motor control (PB9 and PB10).
-void initPWMMoteur() {
+void initPWMMoteur(void) {
     // ===== GPIO SETUP FOR PWM OUTPUT CHANNELS (PB9 = CH2, PB10 = CH3) =====
 
     // Set PB9 and PB10 as alternate function mode
@@ -102,7 +108,7 @@ void initPWMMoteur() {
     TIM2->CR1 |= TIM_CR1_CEN | TIM_CR1_ARPE;  // Enable counter + Auto-reload preload
 }
 
-void initPWN(){
+void initPWN(void){
     initGPIOMoteur();
     initPWMMoteur();
 }
@@ -117,7 +123,7 @@ void setPWMParameters(unsigned char rightspeed, unsigned char leftspeed, unsigne
     robot_speed_right = rightspeed;
     robot_speed_left = leftspeed;
 
-    if (direction == FORWARD) {
+    if (direction == 0) {
         // Move forward: set direction pins high
         GPIOB->ODR |= (GPIO_ODR_OD8 | GPIO_ODR_OD12);
         //Since the speed is from 0-255, we need to scale it to 0-100%
@@ -127,7 +133,7 @@ void setPWMParameters(unsigned char rightspeed, unsigned char leftspeed, unsigne
         else TIM2->CCR3 = (leftspeed * TIM2->ARR)/255;
     }
 
-    else if (direction == BACKWARD) {
+    else if (direction == 1) {
         // Move backward: reset direction pins = 0
         GPIOB->BSRR |= ~(GPIO_BSRR_BR_8 | GPIO_BSRR_BR_12);
         if (rightspeed == 0) TIM2->CCR2 = 0;
@@ -143,13 +149,67 @@ void setPWMParameters(unsigned char rightspeed, unsigned char leftspeed, unsigne
 void setSpeed(unsigned char speed) {
     while (speed > robot_speed) {
         robot_speed += SPEED_STEP;
+		//Si ca depasse
         if (robot_speed > speed) robot_speed = speed;
         setPWMParameters(robot_speed, robot_speed, 0);
-    return;
-
-    else if (speed < robot_speed) {
-}
     }
-
+    while (speed < robot_speed) {
+		robot_speed -= SPEED_STEP;
+		if (robot_speed < speed) robot_speed = speed;
+		setPWMParameters(robot_speed, robot_speed, 0);
+    }
 }
+
+///@breif Tell robot to move forward
+void goForward(){
+	//If the motrer has not been initialized
+	if (pwm_init == 0){
+    	initPWM();
+		pwn_init = 1;
+	}
+	//If the robot has not been moving forward
+	if(robot_direction != 0){
+		setPWMParameters(robot_speed_right, robot_speed_left, 0);
+	}
+}
+
+void goBackwards(){
+	if (pwm_init == 0){
+    	initPWM();
+		pwn_init = 1;
+	}
+	//If the robot has not been moving backwards
+	if(robot_direction != 1){
+		setPWMParameters(robot_speed_right, robot_speed_left, 1);
+	}
+}
+
+void stop(void ){
+	if(robot_speed != 0){
+		setSpeed(0);
+	}
+}
+
+void turnLeft(void ){
+	if (pwm_init == 0){
+    	initPWM();
+		pwn_init = 1;
+	}
+	setPWMParameters(robot_speed, robot_speed/4, 0);
+	robot_direction = TURN_LEFT;
+}
+
+void turnRight(void){
+	if (pwm_init == 0){
+    	initPWM();
+		pwn_init = 1;
+	}
+	setPWMParameters(robot_speed/4, robot_speed, 0);
+	robot_direction = TURN_RIGHT;
+}
+
+void goStraight(void){
+	setPWMParameters(robot_speed, robot_speed, 0);
+}
+
 
