@@ -73,7 +73,7 @@ void initPWMMoteur(void) {
 
     // Set TIM2 to upcounting mode, edge-aligned, no slave mode
     //Disable Slave Mode Control Register (SMCR),
-    //TIM2 is now a master timer, bc it generates PWN instead of listen to interruption
+    //TIM2 is now a master timer, bc it generates PWM instead of listen to interruption
     TIM2->SMCR &= ~TIM_SMCR_SMS;
 
     //Set Direction = 0 (up-counting) and CMS = 00 (Edge-aligned mode)
@@ -95,7 +95,7 @@ void initPWMMoteur(void) {
 
     // LEFT WHEEL - TIM2_CH3 (PB10)
     TIM2->CCMR2 &= ~(TIM_CCMR2_CC3S | TIM_CCMR2_OC3M_Msk);
-    TIM2->CCMR2 |= TIM_CCMR2_OC3PE | TIM_OCMODE_PWM1;   // Preload enable (=1) and PWN mode 1
+    TIM2->CCMR2 |= TIM_CCMR2_OC3PE | TIM_OCMODE_PWM1;   // Preload enable (=1) and PWM mode 1
     TIM2->CCER &= ~TIM_CCER_CC3P;                       // Active High
     TIM2->CCER |= TIM_CCER_CC3E;                        // Enable output
 
@@ -108,7 +108,7 @@ void initPWMMoteur(void) {
     TIM2->CR1 |= TIM_CR1_CEN | TIM_CR1_ARPE;  // Enable counter + Auto-reload preload
 }
 
-void initPWN(void){
+void initPWM(void){
     initGPIOMoteur();
     initPWMMoteur();
 }
@@ -138,7 +138,7 @@ void setPWMParameters(unsigned char rightspeed, unsigned char leftspeed, unsigne
         GPIOB->BSRR |= ~(GPIO_BSRR_BR_8 | GPIO_BSRR_BR_12);
         if (rightspeed == 0) TIM2->CCR2 = 0;
         else TIM2->CCR2 = ((100 - rightspeed) * TIM2->ARR)/255;
-        if (leftspeed == 0) TIM3->CCR3 = 0;
+        if (leftspeed == 0) TIM2->CCR3 = 0;
         else TIM2->CCR3 = ((100 - leftspeed) * TIM2->ARR)/255;
     }
 }
@@ -165,7 +165,7 @@ void goForward(){
 	//If the motrer has not been initialized
 	if (pwm_init == 0){
     	initPWM();
-		pwn_init = 1;
+		pwm_init = 1;
 	}
 	//If the robot has not been moving forward
 	if(robot_direction != 0){
@@ -176,7 +176,7 @@ void goForward(){
 void goBackwards(){
 	if (pwm_init == 0){
     	initPWM();
-		pwn_init = 1;
+		pwm_init = 1;
 	}
 	//If the robot has not been moving backwards
 	if(robot_direction != 1){
@@ -193,7 +193,7 @@ void stop(void ){
 void turnLeft(void ){
 	if (pwm_init == 0){
     	initPWM();
-		pwn_init = 1;
+		pwm_init = 1;
 	}
 	setPWMParameters(robot_speed, robot_speed/4, 0);
 	robot_direction = TURN_LEFT;
@@ -202,7 +202,7 @@ void turnLeft(void ){
 void turnRight(void){
 	if (pwm_init == 0){
     	initPWM();
-		pwn_init = 1;
+		pwm_init = 1;
 	}
 	setPWMParameters(robot_speed/4, robot_speed, 0);
 	robot_direction = TURN_RIGHT;
