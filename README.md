@@ -14,7 +14,7 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 
 ## Features Implemented
 
-### Session 1: Motor Control
+### Session 1: Motor Control (in `moteur.c` and `moteur.h`)
 * Configured **PWM channels** on STM32 timers.
 * Implemented basic robot **movement commands**:
   - Forward
@@ -22,7 +22,7 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
   - Turn left / right
   - Stop
 
-### Session 2: Ultrasonic Sensor Integration
+### Session 2: Ultrasonic Sensor Integration (in `main.c`)
 * Configured GPIO pins for **TRIG** and **ECHO**.
 * Measured distance using **input capture** or **timing logic**.
 > ⚠️ Make sure to level-shift the ECHO signal if needed to protect GPIO pins.
