@@ -1,0 +1,11 @@
+.idea/
+*.uvoptx
+*.uvguix.*
+tp2_pwm.uvprojx
+.DS_Store
+DebugConfig/
+Listings/
+Objects/
+
+
+
