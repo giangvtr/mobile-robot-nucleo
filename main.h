@@ -25,24 +25,5 @@ volatile unsigned short nbr_un = 0;
 volatile unsigned short distance = 0;
 volatile unsigned short nbrUnFinal = 0;
 
-typedef struct {
-	unsigned short nbrIT;	
-	unsigned short nbrUn;
-	char finReception;
-	char it;
-} US;
-
-void US_Init(US *self);
-
-void US_InterruptHandler(US *self);
-
-void US_Management(US *self);
-
-unsigned short US_GetDistance(US *self);
-
-char US_NeedFocus(US *self);
-
-char US_DataReady(US *self);
-
 #endif /* MAIN_H */
 
