@@ -135,6 +135,7 @@ void initTimerRadar(void){
 	//Enable the generation of an interrupt when the timer overflows or reaches the update event
 	TIM2->DIER |= TIM_DIER_UIE;
 	TIM2->SR &= ~(TIM_SR_UIF);
+
 	//Enable timer
 	TIM2->CR1 |= TIM_CR1_CEN;
 	TIM2->CR1 |=TIM_CR1_ARPE;
