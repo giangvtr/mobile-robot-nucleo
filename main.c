@@ -16,12 +16,13 @@
  * \return    \e none.
  */
 #define REMOTE_AD_MSK 0xFFFF0000
+#define REMOTE_ADDRESS 0xFFFFFFFF     //a changer eventuellement
 #define CMD_MSK 0x0000FF00
 #define NOT_CMD_MSK 0x000000FF
 #define MAX_BITS 32
 
 /* Variables could be modified by an interupt handler */
-volatile int IR_buffer[MAX_BITS]; 	//will be modify often so we need to separate it with code_IR
+volatile int bit_buffer[MAX_BITS]; 	//will be modify often so we need to separate it with code_IR
 volatile int bit_index = 0;
 volatile uint32_t last_capture = 0;
 volatile int fin_reception = 0;
@@ -33,8 +34,8 @@ int code_IR;
 
 
 unsigned char wasKeyPressed(void){
-	if((code_IR & REMOTE_AD_MSK == 0x/*our remote address*/)
-		& (~code_IR & NOT_CMD_MSK) == (code_IR & CMD_MSK)){
+	if((code_IR & REMOTE_AD_MSK) == REMOTE_ADDRESS))
+		&& (~code_IR & NOT_CMD_MSK) == (code_IR & CMD_MSK)){
 		pressed = 1;
 		return pressed;
 	}
@@ -59,8 +60,8 @@ void initIRTimer(void){
 	GPIOA -> MODER |= GPIO_MODE_AF_PP << GPIO_MODER_MODE1_Pos;
 
 	/* 5. Configurer les résistances de Pull-Up / Pull-Down */
-	GPIOx->PUPDR &= ~( GPIO_PUPDR_PUPDR1_Msk); // Clear bits
-	GPIOx->PUPDR |= GPIO_PUPDR_PUPDR1_1;      // Mode pull-up
+	GPIOA->PUPDR &= ~( GPIO_PUPDR_PUPDR1_Msk); // Clear bits
+	GPIOA->PUPDR |= GPIO_PUPDR_PUPDR1_1;      // Mode pull-up
 	// 00: GPIO_NOPULL | 01: GPIO_PULLUP
 	// 10: GPIO_PULLDOWN | 11: Reserved
 
@@ -131,9 +132,9 @@ void TIM5_IRQHandler(void){
 			bit_index = 0;
 
 		} else if (bit_index < MAX_BITS) {
-			if (delta > 1000 && delta < 2000) {
+			if (pulse_duration > 1000 && pulse_duration < 2000) {
 				bit_buffer[bit_index++] = 0;
-			} else if (delta > 2000 && delta < 2800) {
+			} else if (pulse_duration > 2000 && pulse_duration < 2500) {
 				bit_buffer[bit_index++] = 1;
 			}
 		}
@@ -161,8 +162,9 @@ int main(void){
 	
 	while(1) {
 		//The interruption handler is called automatically since it is linked to the timer
-		if (wasKeyPressed()){
+		if (fin_reception && wasKeyPressed()){
 			getKeyNumber();
+			fin_reception = 0;
 		}
 	}
 }
