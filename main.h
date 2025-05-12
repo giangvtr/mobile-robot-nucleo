@@ -17,13 +17,6 @@
 #include "stm32_periph.h"
 #include "moteur.h"
 
-#define INDEX_50ms 500
-
-volatile char fin_reception = 0;
-volatile unsigned short index_time=0;
-volatile unsigned short nbr_un = 0;
-volatile unsigned short distance = 0;
-volatile unsigned short nbrUnFinal = 0;
 
 #endif /* MAIN_H */
 
