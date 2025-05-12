@@ -96,7 +96,7 @@ void initTimerRadar(void){
 	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 
 	//Configure the counter
-	TIM2->SMCR &= TIM_SMCR_SMS;
+	TIM2->SMCR &= ~TIM_SMCR_SMS;
 	TIM2->CR1 &= ~(TIM_CR1_DIR | TIM_CR1_CMS);  //Count up and edge-aligned
 
 	TIM2->PSC=179; //On veut 1MHz depuis 180Hz (formule CM4 pg 6)

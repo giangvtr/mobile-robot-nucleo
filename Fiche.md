@@ -46,6 +46,7 @@ GPIOx->OSPEEDR |= GPIO_OSPEEDER_OSPEEDRy_1;
 // 00: Low speed | 01: Medium speed | 10: High speed | 11: Very high speed
 
 /* 5. Configurer les résistances de Pull-Up / Pull-Down */
+//A remplacer y = numero dans le port
 GPIOx->PUPDR &= ~(GPIO_PUPDR_PUPDRy_Msk); // Clear bits
 GPIOx->PUPDR |= GPIO_PUPDR_PUPDRy_1;      // Mode pull-up
 // 00: GPIO_NOPULL | 01: GPIO_PULLUP
