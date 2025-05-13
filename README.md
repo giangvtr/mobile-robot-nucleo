@@ -5,9 +5,8 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 ---
 
 ## Project Overview
-<p align="center">
-  <img src="./robot.jpg" alt="IR Robot Demo" width="500"/>
-</p>
+![Robot](./robot.jpg "Robot Hardware")
+
 
 ### Goals:
 - Control **DC motors via PWM** for directional movement
