@@ -5,7 +5,7 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 ---
 
 ## Project Overview
-![Robot](./robot.jpg "Robot Hardware")
+![Robot](robot.jpg "Robot Hardware")
 
 
 ### Goals:
