@@ -5,7 +5,9 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 ---
 
 ## Project Overview
-![Robot Demo](./robot.jpg)
+<p align="center">
+  <img src="./robot.jpg" alt="IR Robot Demo" width="500"/>
+</p>
 
 ### Goals:
 - Control **DC motors via PWM** for directional movement
@@ -68,6 +70,7 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 ├── startup_stm32f446xx.s                  # Startup code for STM32F446
 ├── stm32_periph.h                         # Peripheral definitions
 ├── stm32f4xx_gpio_AF.h                    # Alternate function mapping for GPIO
+├── ultrasound.c/.h                        # Interface with ultrasound sensor
 
 ```
 ---
