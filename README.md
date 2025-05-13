@@ -4,11 +4,13 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 
 ---
 
-## 📦 Project Overview
+## Project Overview
+![Robot Demo](./robot.jpg)
 
 ### Goals:
-- Control **DC motors via PWM** for directional movement.
-- Integrate an **ultrasonic distance sensor** (HC-SR04 or similar) to detect obstacles.
+- Control **DC motors via PWM** for directional movement
+- Integrate an **ultrasonic distance sensor** (HC-SR04 or similar) to detect obstacles
+- Add **infrared remote control** to allow wireless interaction with the robot
 
 ---
 
@@ -26,6 +28,10 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 * Configured GPIO pins for **TRIG** and **ECHO**.
 * Measured distance using **input capture** or **timing logic**.
 > ⚠️ Make sure to level-shift the ECHO signal if needed to protect GPIO pins.
+
+### Session 3: IR Remote Control (in `ir_remote.c` and `ir_remote.h`)
+* Added support for **infrared signal decoding** using **TIM5 interrupts**.
+* Implemented **NEC protocol** decoding to capture 32-bit remote control codes.
 
 ---
 
