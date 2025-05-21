@@ -173,6 +173,7 @@ void TIM3_IRQHandler(void){
         do_sth();
         //Clear flags
         TIM3->SR &= ~TIM_SR_CC1IF;
+						long t_captured = TIM3->CCR1;
     }
 }
 ```
@@ -190,5 +191,9 @@ void TIM2_IRQHandler(void) {
     }
 }
 ```
+
+### ADC Conversion
+```c++
+``` 
 
 
