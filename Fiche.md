@@ -193,7 +193,45 @@ void TIM2_IRQHandler(void) {
 ```
 
 ### ADC Conversion
+**Cas 1**: Pour convertir un echantillon unique. La fin de conversion est attendue par test du bit d'etat
+
 ```c++
-``` 
+short int conversion_ADC_CH8(){
+    short int val_ADC;
+			
+			//Lancement de la conversion
+			ADC->CR2 |= ADC_CR2_SWSTART;
+			
+			//Attente fin conversion (ADC_SR_end of conversion)
+			while (!(ADC1->SR & ADC_SR_EOC));
+			
+			//Lecture valeur
+			val_ADC = ADC1->DR;
+			
+			return val_ADC;
+}
+```
+
+**Cas 2**: Faire une routine d'interruption (SW declenche) pour attendre la fin de la conversion et copier la valeur obtenue dans une variable globale `res_ADC`.
+
+```c++
+void start_conversion_ADC_CH8(){
+    //Lancement de la conversion
+			ADC->CR2 |= ADC_CR2_SWSTART;
+}
+
+void ADC_IRQHandler(){
+    if (ADC1->DR & ADC_SR_EOC){
+        res_ADC = ADC1->SR;
+						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
+			}
+}			
+```
+
+**Cas 3:** 
+* Delete void Start_ADC_CH8 car c'est le timer (HW) qui va gerer ca et lancer l'interruption 
+ 
+
+### ADC Configuration
 
 
