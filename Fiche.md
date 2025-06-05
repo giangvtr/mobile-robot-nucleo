@@ -1,10 +1,38 @@
-# RESUME CONFIGURATIONS GPIOs ET TIMER
+# STM32 GPIO, Timer, and ADC Configuration Template
 
-## GPIO Configuration
-### Mode input 
+This template provides **generalized and corrected code snippets** for configuring STM32 GPIOs, Timers, and ADCs.  
+**Variables:**  
+- Replace `x` with the GPIO port letter (A, B, C, D, E, etc.).
+- Replace `y` with the pin number (0-15).
+
+Each section includes **high-level explanations** and usage notes.
+
+---
+
+## 1. GPIO Modes
+
+### 1.1. Analog Mode (ADC/DAC)
+**Purpose:** Use pin as analog input/output (e.g., for ADC/DAC).
+
+```c++
+// 1. Enable GPIOx clock
+RCC->AHB1ENR |= RCC_AHB1ENR_GPIOxEN;
+
+// 2. Set pin y to analog mode (MODER = 11)
+GPIOx->MODER &= ~(GPIO_MODER_MODERy_Msk); // Clear mode bits
+GPIOx->MODER |= (0x3 << (2*y)); // Set to analog (11)
+
+// 00: GPIO_MODE_INPUT | 01: GPIO_MODE_OUTPUT_PP
+// 10: GPIO_MODE_AF_PP | 11: GPIO_MODE_ANALOG
+
+```
+
+### 1.2. Input Mode (Manual Read)
+**Purpose:** Read digital input value (polling, not interrupt-driven).
+
 ```c++
 
-/* 1. Enable x GPIO port, remplace x par A, B, C, D, E*/
+/* 1. Enable x GPIO port, remplace x par A, B, C, D, E*/ (see fig.16/202 poly.1 pour savoir quel timer)
 RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOxEN);
 
 /* 2. Configure x.y to input mode */
@@ -26,6 +54,7 @@ uint8_t pin_state = (GPIOA->IDR >> 5) & 0x01;       //Read only PA5
 ```
 
 ### Mode output push-pull
+* This mode is a regular digital output that we can manually toggle them to generate output
 ```c++
 /* 1. Enable x GPIO port, remplace x par A, B, C, D, E*/
 RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOxEN);
@@ -41,7 +70,7 @@ GPIOx->MODER |= GPIO_MODER_MODERy_0;         //Set MODER bit (01 - output)
 GPIOx->OTYPER &= ~(GPIO_OTYPER_OTy);
 // 0 = Push-Pull (valeur par défaut), 1 = Open-Drain
 
-/* 4. OSPEEDR : configurer le slew rate (optionnelle selon application) */
+/* 4. OSPEEDR : configurer le slew rate*/
 GPIOx->OSPEEDR |= GPIO_OSPEEDER_OSPEEDRy_1;   
 // 00: Low speed | 01: Medium speed | 10: High speed | 11: Very high speed
 
@@ -53,16 +82,16 @@ GPIOx->PUPDR |= GPIO_PUPDR_PUPDRy_1;      // Mode pull-up
 // 10: GPIO_PULLDOWN | 11: Reserved
 
 /* Write to output */
-//Write to a single pin (BSRR)
+//Write to a single pin: bit set/reset 
 GPIOA->BSRR = (1 << 5);      // Set PA5 HIGH
 GPIOA->BSRR = (1 << (5+16)); // Set PA5 LOW
 
-//Write to a port (ODR)
+//Write to a port (ODR) (so we need to shift the value to the wanted pin)
 GPIOA->ODR |= (1 << 5);  // Set PA5 HIGH
 GPIOA->ODR &= ~(1 << 5); // Set PA5 LOW
 ```
 
-### Mode output compare (PWM generation) with TIM2
+### Mode output compare (PWM generation) with TIM2 and its mapped GPIO
 ```c++
 /* Enable peripheral Clock for TIM2-CH2 (APB1 bus) et pin PA1 */
 RCC -> APB1ENR |= RCC_APB1ENR_TIM2EN ;
@@ -72,11 +101,17 @@ RCC -> AHB1ENR |= RCC_AHB1ENR_GPIOAEN ;
 GPIOA -> MODER &= ~GPIO_MODER_MODE1_Msk ;
 GPIOA -> MODER |= GPIO_MODE_AF_PP << GPIO_MODER_MODE1_Pos ;
 
+GPIOA -> OSPEEDR &= ~GPIO_OSPEEDR_OSPEED1_Msk ;
+GPIOx->OSPEEDR |= GPIO_OSPEEDER_OSPEEDRy_1;   
+// 00: Low speed | 01: Medium speed | 10: High speed | 11: Very high speed
+
 GPIOA ->AFR [0] &= ~ GPIO_AFRL_AFSEL1 ;                    // Reset AF1 (pin Low in AFR[0])
 GPIOA ->AFR [0] |= GPIO_AF1_TIM2 << GPIO_AFRL_AFSEL1_Pos ;
 
+
+
 /* Clock definition - internal clock */
-TIM2 -> SMCR &= ~TIM_SMCR_SMS ;
+TIM2 -> SMCR &= ~TIM_SMCR_SMS;
 
 
 /* Counter Mode definition */
