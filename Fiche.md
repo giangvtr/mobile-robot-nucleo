@@ -4,6 +4,8 @@ This template provides **generalized and corrected code snippets** for configuri
 **Variables:**  
 - Replace `x` with the GPIO port letter (A, B, C, D, E, etc.).
 - Replace `y` with the pin number (0-15).
+- `n` with timer number (2, 3, ...)
+- `z` with timer channel (1, 2, ...)
 
 Each section includes **high-level explanations** and usage notes.
 
@@ -19,11 +21,8 @@ Each section includes **high-level explanations** and usage notes.
 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOxEN;
 
 // 2. Set pin y to analog mode (MODER = 11)
-GPIOx->MODER &= ~(GPIO_MODER_MODERy_Msk); // Clear mode bits
-GPIOx->MODER |= (0x3 << (2*y)); // Set to analog (11)
-
-// 00: GPIO_MODE_INPUT | 01: GPIO_MODE_OUTPUT_PP
-// 10: GPIO_MODE_AF_PP | 11: GPIO_MODE_ANALOG
+GPIOx->MODER &= ~(GPIO_MODER_MODEy_Msk);
+GPIOx->MODER |= (0x3U << GPIO_MODER_MODEy_Pos); // 11: GPIO_MODE_ANALOG
 
 ```
 
@@ -38,33 +37,28 @@ RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOxEN);
 /* 2. Configure x.y to input mode */
 GPIOx->MODER &= ~(GPIO_MODER_MODERy_Msk);    //Reset MODER bit (00 - input)
 
-// 00: GPIO_MODE_INPUT | 01: GPIO_MODE_OUTPUT_PP
-// 10: GPIO_MODE_AF_PP | 11: GPIO_MODE_ANALOG
-
 /* 3. Configurer les résistances de Pull-Up / Pull-Down */
-GPIOx->PUPDR &= ~(GPIO_PUPDR_PUPDRy_Msk); // Effacer d'abord
+GPIOx->PUPDR &= ~(GPIO_PUPDR_PUPDRy_Msk); 
 GPIOx->PUPDR |= GPIO_PUPDR_PUPDRy_1;      // 01 = Pull-down
 
 // 00: GPIO_NOPULL | 01: GPIO_PULLUP
 // 10: GPIO_PULLDOWN | 11: Reserved
 
-/* 4. Read data in pins */
-uint16_t port_state = GPIOA->IDR;                   //Read 16 pins of GPIOA
-uint8_t pin_state = (GPIOA->IDR >> 5) & 0x01;       //Read only PA5
+/* 4. Read data in pins (Don't put in initialization part */
+uint16_t port_state = GPIOx->IDR;                   //Read 16 pins of GPIOA
+uint8_t pin_state = (GPIOx->IDR >> y) & 0x01;       //Read only one pin Pxy 
 ```
 
-### Mode output push-pull
-* This mode is a regular digital output that we can manually toggle them to generate output
+### 1.3. Mode output push-pull
+**Purpose:** This mode is a regular digital output that we can manually toggle them to generate output. (To drive a LED, relay, etc)
+
 ```c++
 /* 1. Enable x GPIO port, remplace x par A, B, C, D, E*/
 RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOxEN);
 
 /* 2. Configure x.y to output mode */
-GPIOx->MODER &= ~(GPIO_MODER_MODERy_Msk);    //Reset MODER bit
+GPIOx->MODER &= ~(GPIO_MODER_MODERy_Msk);    
 GPIOx->MODER |= GPIO_MODER_MODERy_0;         //Set MODER bit (01 - output)
-
-// 00: GPIO_MODE_INPUT | 01: GPIO_MODE_OUTPUT_PP
-// 10: GPIO_MODE_AF_PP | 11: GPIO_MODE_ANALOG
 
 /* 3. OTYPER : configurer le type de sortie */
 GPIOx->OTYPER &= ~(GPIO_OTYPER_OTy);
@@ -75,23 +69,27 @@ GPIOx->OSPEEDR |= GPIO_OSPEEDER_OSPEEDRy_1;
 // 00: Low speed | 01: Medium speed | 10: High speed | 11: Very high speed
 
 /* 5. Configurer les résistances de Pull-Up / Pull-Down */
-//A remplacer y = numero dans le port
-GPIOx->PUPDR &= ~(GPIO_PUPDR_PUPDRy_Msk); // Clear bits
+GPIOx->PUPDR &= ~(GPIO_PUPDR_PUPDRy_Msk); 
 GPIOx->PUPDR |= GPIO_PUPDR_PUPDRy_1;      // Mode pull-up
 // 00: GPIO_NOPULL | 01: GPIO_PULLUP
 // 10: GPIO_PULLDOWN | 11: Reserved
 
 /* Write to output */
 //Write to a single pin: bit set/reset 
-GPIOA->BSRR = (1 << 5);      // Set PA5 HIGH
-GPIOA->BSRR = (1 << (5+16)); // Set PA5 LOW
+GPIOx->BSRR = (1 << y);      // Set Pxy HIGH
+GPIOx->BSRR = (1 << (y+16)); // Set Pxy LOW
 
-//Write to a port (ODR) (so we need to shift the value to the wanted pin)
-GPIOA->ODR |= (1 << 5);  // Set PA5 HIGH
-GPIOA->ODR &= ~(1 << 5); // Set PA5 LOW
+//Write to a port (ODR) (so need to use |= to avoid overwrite other pins)
+GPIOA->ODR |= (1 << 5);  // Set Pxy HIGH
+GPIOA->ODR &= ~(1 << 5); // Set Pxy LOW
 ```
 
-### Mode output compare (PWM generation) with TIM2 and its mapped GPIO
+---
+
+## 2. Timer Modes
+
+### 2.1. Output Compare (PWM Generation)
+**Purpose:** Generate PWM signals using a timer and corresponding output pin (see last page poly 1).
 ```c++
 /* Enable peripheral Clock for TIM2-CH2 (APB1 bus) et pin PA1 */
 RCC -> APB1ENR |= RCC_APB1ENR_TIM2EN ;
@@ -107,8 +105,6 @@ GPIOx->OSPEEDR |= GPIO_OSPEEDER_OSPEEDRy_1;
 
 GPIOA ->AFR [0] &= ~ GPIO_AFRL_AFSEL1 ;                    // Reset AF1 (pin Low in AFR[0])
 GPIOA ->AFR [0] |= GPIO_AF1_TIM2 << GPIO_AFRL_AFSEL1_Pos ;
-
-
 
 /* Clock definition - internal clock */
 TIM2 -> SMCR &= ~TIM_SMCR_SMS;
@@ -155,7 +151,7 @@ TIM2 -> CCER |= TIM_CCER_CC2E ;
 TIM2 -> CR1 |= TIM_CR1_CEN ;
 ```
 
-### Mode input capture
+### 2.2. Mode input capture (Signal Measurement)
 L’objectif de cette partie est de mesurer la période du signal y(t) présent sur la broche PA6 à l’aide
 du Timer TIM3 en mode capture.
 
@@ -201,7 +197,11 @@ NVIC_ClearPendingIRQ(TIM3_IRQn) ;
 NVIC_EnableIRQ(TIM3_IRQn) ;
 ```
 
-### Interruption Handler (for input capture)
+---
+
+## 3. Interrupt Handlers
+
+### 3.1. Timer Input Capture Interrupt
 ```c++
 void TIM3_IRQHandler(void){
     if( (TIM3->SR & TIM_SR_CC1IF) != 0){
@@ -214,7 +214,8 @@ void TIM3_IRQHandler(void){
 ```
 * To read captured value: `long t_captured = TIM3->CCR1;`
 
-### Interruption Handler (for output compare)
+### 3.2. Timer Output Compare (PWM) Interrupt
+
 ```c++
 void TIM2_IRQHandler(void) {
     //interruption type debordement
@@ -227,9 +228,8 @@ void TIM2_IRQHandler(void) {
 }
 ```
 
-### ADC Conversion
-**Cas 1**: Pour convertir un echantillon unique. La fin de conversion est attendue par test du bit d'etat
-
+### 3.3.a. Interrupt for ADC conversion (Single conversion)
+**Purpose:** Pour convertir un echantillon unique. La fin de conversion est attendue par test du bit d'etat.
 ```c++
 short int conversion_ADC_CH8(){
     short int val_ADC;
@@ -246,10 +246,11 @@ short int conversion_ADC_CH8(){
 			return val_ADC;
 }
 ```
-
-**Cas 2**: Faire une routine d'interruption (SW declenche) pour attendre la fin de la conversion et copier la valeur obtenue dans une variable globale `res_ADC`.
+### 3.3.b Single Conversion (Interrupt)
+**Purpose:** : Faire une routine d'interruption (SW declenche) pour attendre la fin de la conversion et copier la valeur obtenue dans une variable globale `res_ADC`.
 
 ```c++
+//We start the conversion manually 
 void start_conversion_ADC_CH8(){
     //Lancement de la conversion
 			ADC->CR2 |= ADC_CR2_SWSTART;
@@ -263,10 +264,53 @@ void ADC_IRQHandler(){
 }			
 ```
 
-**Cas 3:** 
-* Delete void Start_ADC_CH8 car c'est le timer (HW) qui va gerer ca et lancer l'interruption 
- 
+### 3.3.c. 
+**Purpose:** Une conversion est lancee par le Timer
+* Delete void Start_ADC_CH8
+```c++
+void ADC_IRQHandler(){
+    if (ADC1->DR & ADC_SR_EOC){
+        res_ADC = ADC1->SR;
+						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
+			}
+}			
+```
 
-### ADC Configuration
+---
 
+## 4. ADC Configuration
+**Purpose:** Init ADC1_IN8 (TD9, cas 1)
+
+```c++
+    /* Enable clock */
+	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+	
+	/* Disable ADC */
+	ADC1->CR2 &=~ADC_CR2_ADON;
+	
+	/* Commun à tous les ADC */
+	/* Set prescaler (2,4,6 or 8) */
+	ADC->CCR &= ~ADC_CCR_ADCPRE;
+	ADC->CCR |= ADC_CLOCK_SYNC_PCLK_DIV4 << ADC_CCR_ADCPRE_Pos;	// prescaler = 4
+	
+	/* SMPR1 for channel 10 to 18, SMPR2 for 0 to 9 */
+	ADC1->SMPR2 &= ~ADC_SMPR2_SMP8;
+	ADC1->SMPR2 |= ADC_SAMPLETIME_112CYCLES << ADC_SMPR2_SMP8;	// 112 cycles à 250kHz = 0.448ms de temps d'acquisition
+	
+	/* Main config for ADC */
+	ADC1->CR1 &= ~ADC_CR1_SCAN;	// Sigle channel mode
+	ADC1->CR2 &= ~ADC_CR2_CONT;	// Single conversion mode
+	ADC1->CR1 &= ~ADC_CR1_DISCEN; // Discontinuous mode disabled
+	ADC1->CR2 &= ~ADC_CR2_EXTEN; // Trigger detection disable
+	
+	ADC1->SQR1 &= ~ADC_SQR1_SQ1_L;	// 1 conversion, not several at once (for averaging purposes)
+	
+	/* SQR1 = channel 13 to 16 */
+	/* SQR2 = channel 7 to 12 */
+	/* SQR3 = channel 1 to 6 */
+	ADC1->SQR3 &= ~ADC_SQR3_SQ1;
+	ADC1->SQR3 |= 8 << ADC_SQR3_SQ1_Pos;	// Channel 8 for conversion 1	
+	
+	ADC1->CR2 |= ADC_CR2_ADON; // Enable ADC
+```
 
