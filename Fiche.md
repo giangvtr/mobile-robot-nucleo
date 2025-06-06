@@ -325,6 +325,7 @@ void EXTI3_IRQHandler(void) {
 		EXTI->PR1 |= EXTI_PR1_PIF3;
 	}
 }
+```
 
 ---
 
