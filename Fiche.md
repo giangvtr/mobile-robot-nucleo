@@ -202,6 +202,8 @@ NVIC_EnableIRQ(TIM3_IRQn) ;
 ## 3. Interrupt Handlers
 
 ### 3.1. Timer Input Capture Interrupt
+**Purpose**: Measure a time of an external event. For example, used in Ultrasound captor to measure distance.
+
 ```c++
 void TIM3_IRQHandler(void){
     if( (TIM3->SR & TIM_SR_CC1IF) != 0){
@@ -215,6 +217,7 @@ void TIM3_IRQHandler(void){
 * To read captured value: `long t_captured = TIM3->CCR1;`
 
 ### 3.2. Timer Output Compare (PWM) Interrupt
+**Purpose:** Call an interruption upon clock overflow for example
 
 ```c++
 void TIM2_IRQHandler(void) {
@@ -264,9 +267,10 @@ void ADC_IRQHandler(){
 }			
 ```
 
-### 3.3.c. 
+### 3.3.c. HW (timer) declenche la conversion et attendre la fin de la conversion et copier la valeur obtenue dans une variable globale `res_ADC`.
 **Purpose:** Une conversion est lancee par le Timer
 * Delete void Start_ADC_CH8
+
 ```c++
 void ADC_IRQHandler(){
     if (ADC1->DR & ADC_SR_EOC){
@@ -274,6 +278,41 @@ void ADC_IRQHandler(){
 						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
 			}
 }			
+```
+
+### 3.4. External interruption (EXTI)
+**Purpose:** An external action will call an interuption (for example: a pushed button)
+
+```c++
+int main(void) {
+	// Enable GPIO Clock
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+	
+	// GPIO Mode: Input(00), Output (01), AF(10), Analog (11)
+	GPIOA->MODER &= ~3U << 6; //Mode AF pour PA6
+	
+	// GPIO Push-Pull: No pull-up, pull-down (00), // Pull-up (01), Pull-down (10), Reserved (11)
+	GPIOA->PUPDR &= ~3U << 6;
+	GPIOA->PUPDR |= 2U << 6; // Pull down
+
+	NVIC_EnableIRQ(EXTI3_IRQn); // Enable Interrupt
+
+	// Connect External Line to the GPIO
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+
+	SYSCFG->EXTICR[0] &= ~SYSCFG_EXTICR1_EXTI3; 
+	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI3_PA; 
+
+	// Rising edge trigger selection
+	// 0 = trigger disabled, 1 = trigger enabled
+	EXTI->RTSR1 |= EXTI_RTSR1_RT3; 
+
+	// Interrupt Mask Register
+	// 0 = masked, 1 = not masked (enabled)
+	EXTI->IMR1 |= EXTI_IMR1_IM3;
+
+	while(1);	
+}
 ```
 
 ---
@@ -313,4 +352,8 @@ void ADC_IRQHandler(){
 	
 	ADC1->CR2 |= ADC_CR2_ADON; // Enable ADC
 ```
+---
+## 5. DAC Configuration
+
+---
 
