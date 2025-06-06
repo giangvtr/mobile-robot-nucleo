@@ -22,7 +22,7 @@ RCC->AHB1ENR |= RCC_AHB1ENR_GPIOxEN;
 
 // 2. Set pin y to analog mode (MODER = 11)
 GPIOx->MODER &= ~(GPIO_MODER_MODEy_Msk);
-GPIOx->MODER |= (0x3U << GPIO_MODER_MODEy_Pos); // 11: GPIO_MODE_ANALOG
+GPIOx->MODER |= (0x3U << GPIO_MODER_MODEy_Pos); // 11: GPIO_MODE_ANALOG, can replace 0x3U
 
 ```
 
@@ -109,7 +109,6 @@ GPIOA ->AFR [0] |= GPIO_AF1_TIM2 << GPIO_AFRL_AFSEL1_Pos ;
 /* Clock definition - internal clock */
 TIM2 -> SMCR &= ~TIM_SMCR_SMS;
 
-
 /* Counter Mode definition */
 //— DIR : Direction (Up or down) ⇒ Counter CNT used as upcounter
 //— CMS[1:0] : Edge or Center-aligned mode selection ⇒ Edge-aligned mode selection
@@ -186,7 +185,9 @@ TIM3 -> CCMR1 &= ~ TIM_CCMR1_IC1PSC ; // No prescaler, capture each time an edge
 TIM3 -> CCER &= ~( TIM_CCER_CC1P | TIM_CCER_CC1NP ) ; // Rising edge detect
 TIM3 -> CCER |= TIM_INPUTCHANNELPOLARITY_RISING << TIM_CCER_CC1P_Pos
                 | TIM_CCER_CC1E ; // Capture Enable
-                
+
+
+//========== Only do this when TIM3 call an interruption ===========
 /* Enable interrupt when capture occurs on channel 1 */
 TIM3 -> DIER |= TIM_DIER_CC1IE ; // Enable interrupt when raising edge captured
 TIM3 -> SR = ~TIM_SR_CC1IF ; // Clear the Capture event flag for channel 1
@@ -314,6 +315,16 @@ int main(void) {
 	while(1);	
 }
 ```
+
+* Example of an ISR
+```c++
+void EXTI3_IRQHandler(void) { 
+	if ((EXTI->PR1 & EXTI_PR1_PIF3) != 0) {
+		// Toggle LED...
+		// Cleared flag by writing 1
+		EXTI->PR1 |= EXTI_PR1_PIF3;
+	}
+}
 
 ---
 
