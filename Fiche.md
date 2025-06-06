@@ -258,7 +258,7 @@ void start_conversion_ADC_CH8(){
 
 void ADC_IRQHandler(){
     if (ADC1->DR & ADC_SR_EOC){
-        res_ADC = ADC1->SR;
+        res_ADC = ADC1->DR;
 						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
 			}
 }			
@@ -270,7 +270,7 @@ void ADC_IRQHandler(){
 ```c++
 void ADC_IRQHandler(){
     if (ADC1->DR & ADC_SR_EOC){
-        res_ADC = ADC1->SR;
+        res_ADC = ADC1->DR;
 						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
 			}
 }			
