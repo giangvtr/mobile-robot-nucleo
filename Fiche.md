@@ -9,6 +9,12 @@ This template provides **generalized and corrected code snippets** for configuri
 
 Each section includes **high-level explanations** and usage notes.
 
+Use :
+* `REG &= ~MASK` to clear bits (set to 0)
+* `REG |= VALUE << Pos` to set bits (set to 1)
+* `REG ^= VALUE << Pos` to toggle bit 
+
+
 ---
 
 ## 1. GPIO Modes
@@ -40,7 +46,6 @@ GPIOx->MODER &= ~(GPIO_MODER_MODERy_Msk);    //Reset MODER bit (00 - input)
 /* 3. Configurer les résistances de Pull-Up / Pull-Down */
 GPIOx->PUPDR &= ~(GPIO_PUPDR_PUPDRy_Msk); 
 GPIOx->PUPDR |= GPIO_PUPDR_PUPDRy_1;      // 01 = Pull-down
-
 // 00: GPIO_NOPULL | 01: GPIO_PULLUP
 // 10: GPIO_PULLDOWN | 11: Reserved
 
@@ -51,6 +56,12 @@ uint8_t pin_state = (GPIOx->IDR >> y) & 0x01;       //Read only one pin Pxy
 
 ### 1.3. Mode output push-pull
 **Purpose:** This mode is a regular digital output that we can manually toggle them to generate output. (To drive a LED, relay, etc)
+
+> How to chooose `OSPEEDR`:
+> * 00 - low speed : toggling LEDs, relays, general-purpose outputs 
+> * 01/10/11 - Medium/High/Very High Speed:
+>	* For high-frequency signals or when fast rise/fall times are necessary (e.g., SPI, I2C, PWM, or other fast digital interfaces)
+> 	* Required if the output pin is used as a clock or data line for high-speed peripherals (check the datasheet for minimum speed requirements for certain alternate functions, such as SPI SCK)
 
 ```c++
 /* 1. Enable x GPIO port, remplace x par A, B, C, D, E*/
@@ -155,47 +166,52 @@ L’objectif de cette partie est de mesurer la période du signal y(t) présent 
 du Timer TIM3 en mode capture.
 
 ```c++
-/* Enable peripheral Clock for TIM2-CH2 (APB1 bus) et pin PA1 */
-RCC -> APB1ENR |= RCC_APB1ENR_TIM2EN ;
-RCC -> AHB1ENR |= RCC_AHB1ENR_GPIOAEN ;
+/* 1. Enable peripheral clocks for TIM3 (APB1 bus) and GPIOA */
+RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
-/* GPIO pin config . alternate function 1 to connect TIM2 - CH2 to PA6 */
-GPIOA -> MODER &= ~GPIO_MODER_MODE6_Msk ;
-GPIOA -> MODER |= GPIO_MODE_AF_PP << GPIO_MODER_MODE6_Pos ;
+/* 2. Configure PA6 as alternate function (AF) for TIM3_CH1 */
+/* Set PA6 to Alternate Function mode */
+GPIOA->MODER &= ~GPIO_MODER_MODE6_Msk;
+GPIOA->MODER |= GPIO_MODE_AF_PP << GPIO_MODER_MODE6_Pos;
 
-GPIOA ->AFR [0] &= ~ GPIO_AFRL_AFSEL6 ;                    // Reset AF1 (pin Low in AFR[0])
-GPIOA ->AFR [0] |= GPIO_AF6_TIM2 << GPIO_AFRL_AFSEL6_Pos ;
+/* Select AF2 (TIM3_CH1) for PA6 in AFRL */
+GPIOA->AFR[0] &= ~GPIO_AFRL_AFSEL6;
+GPIOA->AFR[0] |= GPIO_AF2_TIM3 << GPIO_AFRL_AFSEL6_Pos;
 
-/* Clock definition - internal clock */
-TIM3 -> SMCR &= ~TIM_SMCR_SMS ;
+/* 3. Timer TIM3 configuration */
+/* a. Use internal clock */
+TIM3->SMCR &= ~TIM_SMCR_SMS;
 
-/* Counter Mode definition */
-TIM3 ->CR1 &= ~( TIM_CR1_DIR // Up counting
-                | TIM_CR1_CMS ) ; // Edge - aligned
-/* Prescaler value definition (pas definition pour ARR)*/
-TIM3 ->PSC = 180;
+/* b. Counter mode: upcounting, edge-aligned */
+TIM3->CR1 &= ~(TIM_CR1_DIR | TIM_CR1_CMS);
 
-/* Input capture mode - channel configuration */
-TIM3 -> CCMR1 &= ~ TIM_CCMR1_CC1S ; // CC1 channel bit is cleared
-TIM3 -> CCMR1 |= TIM_ICSELECTION_DIRECTTI ; // and IC1 mapped on TI1.
-TIM3 -> CCMR1 &= ~TIM_CCMR1_IC1F ; // No filter
-TIM3 -> CCMR1 &= ~ TIM_CCMR1_IC1PSC ; // No prescaler, capture each time an edge is detected
+/* c. Prescaler value (adjust as needed for your signal) */
+TIM3->PSC = 180;
 
-/* Input capture enable on channel 1 */
-TIM3 -> CCER &= ~( TIM_CCER_CC1P | TIM_CCER_CC1NP ) ; // Rising edge detect
-TIM3 -> CCER |= TIM_INPUTCHANNELPOLARITY_RISING << TIM_CCER_CC1P_Pos
-                | TIM_CCER_CC1E ; // Capture Enable
+/* 4. Input capture mode - channel configuration */
+/* a. Select input capture on TI1 (CC1S = 01) */
+TIM3->CCMR1 &= ~TIM_CCMR1_CC1S_Msk;
+TIM3->CCMR1 |= TIM_CCMR1_CC1S_0; // CC1S = 01: IC1 mapped on TI1
 
+/* b. No filter, no prescaler for input capture */
+TIM3->CCMR1 &= ~TIM_CCMR1_IC1F_Msk;
+TIM3->CCMR1 &= ~TIM_CCMR1_IC1PSC_Msk;
 
-//========== Only do this when TIM3 call an interruption ===========
-/* Enable interrupt when capture occurs on channel 1 */
-TIM3 -> DIER |= TIM_DIER_CC1IE ; // Enable interrupt when raising edge captured
-TIM3 -> SR = ~TIM_SR_CC1IF ; // Clear the Capture event flag for channel 1
+/* 5. Input capture enable on channel 1, rising edge */
+TIM3->CCER &= ~(TIM_CCER_CC1P | TIM_CCER_CC1NP); // Rising edge
+TIM3->CCER |= TIM_INPUTCHANNELPOLARITY_RISING << TIM_CCER_CC1P_Pos | TIM_CCER_CC1E;
 
-/* Enable interrupt in Interrupt controller */
-NVIC_SetPriority(TIM3_IRQn ,3) ;
-NVIC_ClearPendingIRQ(TIM3_IRQn) ;
-NVIC_EnableIRQ(TIM3_IRQn) ;
+/* 6. Enable interrupt when capture occurs on channel 1 */
+TIM3->DIER |= TIM_DIER_CC1IE;
+
+/* 7. Clear the Capture event flag for channel 1 */
+TIM3->SR &= ~TIM_SR_CC1IF;
+
+/* 8. Enable interrupt in the NVIC */
+NVIC_SetPriority(TIM3_IRQn, 3);
+NVIC_ClearPendingIRQ(TIM3_IRQn);
+NVIC_EnableIRQ(TIM3_IRQn);
 ```
 
 ---
@@ -211,7 +227,7 @@ void TIM3_IRQHandler(void){
         do_sth();
         //Clear flags
         TIM3->SR &= ~TIM_SR_CC1IF;
-						long t_captured = TIM3->CCR1;
+		long t_captured = TIM3->CCR1;
     }
 }
 ```
@@ -236,18 +252,17 @@ void TIM2_IRQHandler(void) {
 **Purpose:** Pour convertir un echantillon unique. La fin de conversion est attendue par test du bit d'etat.
 ```c++
 short int conversion_ADC_CH8(){
-    short int val_ADC;
+	short int val_ADC;
+	//Lancement de la conversion
+	// ADC1->CR2 |= ADC_CR2_SWSTART;
 			
-			//Lancement de la conversion
-			ADC->CR2 |= ADC_CR2_SWSTART;
+	//Attente fin conversion (ADC_SR_end of conversion)
+	while (!(ADC1->SR & ADC_SR_EOC));
 			
-			//Attente fin conversion (ADC_SR_end of conversion)
-			while (!(ADC1->SR & ADC_SR_EOC));
+	//Lecture valeur
+	val_ADC = ADC1->DR;
 			
-			//Lecture valeur
-			val_ADC = ADC1->DR;
-			
-			return val_ADC;
+	return val_ADC;
 }
 ```
 ### 3.3.b Single Conversion (Interrupt)
@@ -257,14 +272,14 @@ short int conversion_ADC_CH8(){
 //We start the conversion manually 
 void start_conversion_ADC_CH8(){
     //Lancement de la conversion
-			ADC->CR2 |= ADC_CR2_SWSTART;
+	ADC1->CR2 |= ADC_CR2_SWSTART;
 }
 
 void ADC_IRQHandler(){
     if (ADC1->DR & ADC_SR_EOC){
         res_ADC = ADC1->DR;
-						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
-			}
+		ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
+	}
 }			
 ```
 
@@ -274,10 +289,10 @@ void ADC_IRQHandler(){
 
 ```c++
 void ADC_IRQHandler(){
-    if (ADC1->DR & ADC_SR_EOC){
+    if (ADC1->SR & ADC_SR_EOC){
         res_ADC = ADC1->DR;
-						 ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
-			}
+		ADC1->SR &= ~ADC_SR_EOC; //Remettre le flag a 0
+	}
 }			
 ```
 
@@ -367,5 +382,46 @@ void EXTI3_IRQHandler(void) {
 ---
 ## 5. DAC Configuration
 
+```c++
+// 1. ENABLE PERIPHERAL CLOCKS (REQUIRED)
+RCC->APB1ENR |= RCC_APB1ENR_DACEN;      // Enable DAC1 clock (required)
+RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;    // Enable GPIOA clock (required)
+
+// 2. CONFIGURE GPIO PIN AS ANALOG (REQUIRED)
+GPIOA->MODER |= GPIO_MODER_MODE4;       // Analog mode (0b11 for PA4)
+
+// 3. DISABLE DAC BEFORE CONFIGURATION (RECOMMENDED)
+// - Disabling prevents glitches or undefined output during setup.
+DAC->CR &= ~DAC_CR_EN1;                 // Disable DAC channel 1
+
+// 4. CONFIGURE DAC PERIPHERAL (REQUIRED/OPTIONAL STEPS BELOW)
+// Trigger selection: Only if you want hardware-timed updates (e.g., with timer).
+// Otherwise, leave disabled for software/manual update only.
+// To enable trigger (if required). This option was not used for TP5 since we write manually ADC_val to DAC_val.
+DAC->CR |= DAC_CR_TEN1;              // Enable trigger for channel 1
+DAC->CR &= ~DAC_CR_TSEL1;            // Clear trigger selection bits
+DAC->CR |= (TRIGGER_SOURCE << DAC_CR_TSEL1_Pos); // Set trigger source (see RM for options)
+
+// Wave generation: Only for built-in noise/triangle output
+DAC->CR |= DAC_CR_WAVE1_0;           // Enable noise wave (optional)
+DAC->CR |= DAC_CR_WAVE1_1;           // Enable triangle wave (optional)
+// Configure amplitude if needed:
+DAC->CR |= (AMPLITUDE << DAC_CR_MAMP1_Pos);
+
+// DMA: Only if you want to automate output from a memory buffer.
+DAC->CR |= DAC_CR_DMAEN1;            // Enable DMA for channel 1 (optional)
+//DMA setup is required separately if used
+
+// 5. ENABLE DAC (REQUIRED)
+// - Must be enabled to produce output.
+DAC->CR |= DAC_CR_EN1;                  // Enable DAC channel 1
+
+```
+
+* When write 12-bit left-aligned data::
+```c++
+//Write Data to the DAC
+DAC->DHR12L1 = value;
+```
 ---
 
