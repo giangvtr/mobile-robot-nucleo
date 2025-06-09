@@ -3,19 +3,20 @@
 //
 
 #include "ultrasound.h"
-
+#define INDEX_50ms 500
 
 enum {
   TRIG = 0,
-  ECHO
-} state;
+  ECHO,
+  COMPUTE
+} State;
 
-int state = TRIG;
+volatile enum State state = TRIG;
 volatile unsigned short index_time = 0;
 volatile unsigned short nbr_un = 0;
 volatile unsigned short nbrUnFinal = 0;
 volatile unsigned short fin_reception = 0;
-volatile unsigned short distance
+volatile float distance;
 
 void UltraSoundMgt(void){
 	//Will be call repetedly
@@ -23,7 +24,7 @@ void UltraSoundMgt(void){
 	switch (state) {
 		case TRIG:
 			//State Generation
-			GPIOx_Set_Output_Pin(PA_12);
+			GPIOA->ODR |= GPIO_ODR_OD12;
 			index_time += 1;
 			nbr_un=0;
 			if (index_time == 1){
@@ -33,22 +34,22 @@ void UltraSoundMgt(void){
 		case ECHO:
 			//State Reception
 			if (index_time < INDEX_50ms){
-				GPIOx_Reset_Output_Pin(PA_12);
+				GPIOA->ODR &=~ GPIO_ODR_OD12;
 				index_time++;
-				nbr_un += GPIOx_Read_Input_Pin(PA_8);
+				if(GPIOA->IDR & GPIO_IDR_ID8) nbr_un++;
 			} else { //index_time >= INDEX_50ms
 				index_time = 0;
 				fin_reception = 1;
 				nbrUnFinal = nbr_un;
-				state = 0;
+				state = TRIG;
 			}
 			break;
 	}
 }
 
 void ComputeDistance(void){
-	float T_dist = nbrUnFinal * (100.0f / 1000000.0f);
-	distance = (unsigned short)(T_dist / 58.8235f);
+	distance = ((float)nbrUnFinal * 10.0f) / 58.8235f; // in cm
+	fin_reception = 0;
 }
 
 //PA5 need to be in input mode
@@ -111,7 +112,7 @@ void initTimerRadar(void){
 	//Configure the counter
 	TIM2->SMCR &= ~TIM_SMCR_SMS;
 	TIM2->CR1 &= ~(TIM_CR1_DIR | TIM_CR1_CMS);  //Count up and edge-aligned
-	TIM2->CR1 |= TIM_CR1_ARPE
+	TIM2->CR1 |= TIM_CR1_ARPE;
 
 	TIM2->PSC=179; //On veut 1MHz depuis 180Hz (formule CM4 pg 6)
 	TIM2->ARR=99; //on veut 100u => 10kHz => ARR
@@ -153,7 +154,7 @@ void TIM2_IRQHandler(void) {
 	//interruption type debordement
 	//UIF - update event occurs flags, if = 1, an event is occured
 	if (TIM2->SR & TIM_SR_UIF) {
-		GPIOx_Togle_Output_Pin(PA_5);
+		GPIOA->ODR ^= GPIO_ODR_OD5;
 		TIM2->SR &= ~(TIM_SR_UIF);  // Clear pending flag
 		// Handle your interrupt here
 		UltraSoundMgt();
@@ -174,7 +175,6 @@ int main(void){
 	while(1) {
 		//The interruption handler is called automatically since it is linked to the timer
 		if (fin_reception == 1){
-			fin_reception = 0;
 			ComputeDistance();
 		}
 	}
