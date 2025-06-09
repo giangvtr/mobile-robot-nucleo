@@ -4,22 +4,33 @@
 
 #include "ultrasound.h"
 
-static unsigned short state = 0;
+
+enum {
+  TRIG = 0,
+  ECHO
+} state;
+
+int state = TRIG;
+volatile unsigned short index_time = 0;
+volatile unsigned short nbr_un = 0;
+volatile unsigned short nbrUnFinal = 0;
+volatile unsigned short fin_reception = 0;
+volatile unsigned short distance
 
 void UltraSoundMgt(void){
 	//Will be call repetedly
 	//voir dans l'enonce, on peut constater que il s'agit un FSM de 2 states : Generation and Reception
 	switch (state) {
-		case 0:
+		case TRIG:
 			//State Generation
 			GPIOx_Set_Output_Pin(PA_12);
 			index_time += 1;
 			nbr_un=0;
 			if (index_time == 1){
-				state = 1;
+				state = ECHO;
 			}
 			break;
-		case 1:
+		case ECHO:
 			//State Reception
 			if (index_time < INDEX_50ms){
 				GPIOx_Reset_Output_Pin(PA_12);
