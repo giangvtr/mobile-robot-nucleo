@@ -34,6 +34,10 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 * Added support for **infrared signal decoding** using **TIM5 interrupts**.
 * Implemented **NEC protocol** decoding to capture 32-bit remote control codes.
 
+### Session 4: Digital Signal Processing on STM32 Microcontroller
+* Implemented a full real-time digital signal processing (DSP) chain through ADC and DAC peripherals
+* Developed and tested interrupt-driven signal acquisition and output routines
+
 ---
 
 ## 🔌 Hardware Setup
