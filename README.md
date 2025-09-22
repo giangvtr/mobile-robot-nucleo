@@ -1,6 +1,6 @@
 # Mobile Robot with Nucleo (Cortex-M4)
 
-This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile robot platform. The project is developed in **Keil µVision v5** and organized for embedded C development using CMSIS and STM32 HAL libraries.
+This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile robot platform. The project is developed in **Keil µVision v5** and organized for embedded C development using CMSIS libraries. The code is written in bare-metal without the help of code-generation tool like STM32CubeIDE.
 
 ---
 
@@ -9,15 +9,16 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
 
 
 ### Goals:
-- Control **DC motors via PWM** for directional movement
+- Control **DC motors via PWM** for directional movement. An **infrared remote control** is to allow wireless interaction with the robot
 - Integrate an **ultrasonic distance sensor** (HC-SR04 or similar) to detect obstacles
-- Add **infrared remote control** to allow wireless interaction with the robot
+- Additional module for real-time signal processing (DSP) chain through DAC/ADC peripherals
+
 
 ---
 
 ## Features Implemented
 
-### Session 1: Motor Control (in `moteur.c` and `moteur.h`)
+### Motor Control (in `moteur.c/.h`)
 * Configured **PWM channels** on STM32 timers.
 * Implemented basic robot **movement commands**:
   - Forward
@@ -25,16 +26,16 @@ This project uses an **STM32 Nucleo board (Cortex-M4)** to build a basic mobile 
   - Turn left / right
   - Stop
 
-### Session 2: Ultrasonic Sensor Integration (in `main.c`)
+### Ultrasonic Sensor Integration (in `ultrasound.c/.h`)
 * Configured GPIO pins for **TRIG** and **ECHO**.
 * Measured distance using **input capture** or **timing logic**.
 > ⚠️ Make sure to level-shift the ECHO signal if needed to protect GPIO pins.
 
-### Session 3: IR Remote Control (in `ir_remote.c` and `ir_remote.h`)
+### IR Remote Control (in `main.c/.h`)
 * Added support for **infrared signal decoding** using **TIM5 interrupts**.
 * Implemented **NEC protocol** decoding to capture 32-bit remote control codes.
 
-### Session 4: Digital Signal Processing on STM32 Microcontroller
+### Digital Signal Processing
 * Implemented a full real-time digital signal processing (DSP) chain through ADC and DAC peripherals
 * Developed and tested interrupt-driven signal acquisition and output routines
 
